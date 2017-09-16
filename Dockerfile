@@ -1,5 +1,5 @@
 FROM alpine:3.6
-RUN apk --no-cache add git go && \
+RUN apk --no-cache add git go openssl && \
   go get github.com/eientei/jsonget && \
   go build -o /jsonget github.com/eientei/jsonget && \
   rm -rf go && \
