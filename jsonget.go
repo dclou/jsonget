@@ -68,7 +68,7 @@ func advanceFunc(git *gitlab.Client, advance string) func (writer http.ResponseW
 		}
 
 		if ref == "" {
-			writer.WriteHeader(http.StatusNotFound)
+			writer.WriteHeader(http.StatusOK)
 			return
 		}
 
@@ -105,10 +105,11 @@ func advanceFunc(git *gitlab.Client, advance string) func (writer http.ResponseW
 
 		if rootId < 0 {
 			log.Printf("Target root %s not found", targetRoot)
-			writer.WriteHeader(http.StatusNotFound)
+			writer.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		join := "variables[SUBMODULE]=" + sourceProj
+		log.Printf("Advancing project %s(%d) at ref %s with token %s\n", targetRoot, rootId, ref, token)
 		http.Post(git.BaseURL().String() + "/projects/" + strconv.FormatUint(uint64(rootId), 10) + "/ref/" + ref + "/trigger/pipeline?token=" + token + "&" + join, "", nil)
 		writer.WriteHeader(http.StatusOK)
 	}
