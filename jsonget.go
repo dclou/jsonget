@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"fmt"
+	"net/url"
 )
 
 func flatten(inf map[string]interface{}) (ret map[string]string) {
@@ -46,7 +47,17 @@ func process(k string, v interface{}) (ret map[string]string) {
 	return
 }
 
-func advanceFunc(git *gitlab.Client, advance string) func (writer http.ResponseWriter, request *http.Request) {
+func tovars(joinmap map[string]string) string {
+	list := make([]string, len(joinmap))
+	i := 0
+	for k, v := range joinmap {
+		list[i] = "variables[" + url.QueryEscape(k) + "]=" + url.QueryEscape(v)
+		i++
+	}
+	return strings.Join(list, "&")
+}
+
+func advanceFunc(client *gitlab.Client, advance string) func (writer http.ResponseWriter, request *http.Request) {
 	advanceRefs := strings.Split(advance, ",")
 
 	return func (writer http.ResponseWriter, request *http.Request) {
@@ -83,10 +94,10 @@ func advanceFunc(git *gitlab.Client, advance string) func (writer http.ResponseW
 		rootStr := "root"
 		page := 1
 		for {
-			ps, resp, err := git.Projects.ListProjects(&gitlab.ListProjectsOptions{ListOptions: gitlab.ListOptions{Page: page, PerPage: 100}, Search: &rootStr})
+			ps, resp, err := client.Projects.ListProjects(&gitlab.ListProjectsOptions{ListOptions: gitlab.ListOptions{Page: page, PerPage: 100}, Search: &rootStr})
 			roots = append(roots, ps...)
 			if err != nil {
-				log.Print(err)
+				log.Println(err)
 				writer.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -95,22 +106,27 @@ func advanceFunc(git *gitlab.Client, advance string) func (writer http.ResponseW
 			}
 		}
 
-		rootId := -1
+		var root *gitlab.Project
 		for _, r := range roots {
 			if r.PathWithNamespace == targetRoot {
-				rootId = r.ID
+				root = r
 				break
 			}
 		}
 
-		if rootId < 0 {
+		if root == nil {
 			log.Printf("Target root %s not found", targetRoot)
 			writer.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		join := "variables[SUBMODULE]=" + sourceProj
-		log.Printf("Advancing project %s(%d) at ref %s with token %s\n", targetRoot, rootId, ref, token)
-		http.Post(git.BaseURL().String() + "/projects/" + strconv.FormatUint(uint64(rootId), 10) + "/ref/" + ref + "/trigger/pipeline?token=" + token + "&" + join, "", nil)
+
+		joinmap := make(map[string]string)
+		joinmap["SUBMODULE"] = sourceProj
+		joinmap["SUBMODULE_URL"] = flat["repository.git_http_url"]
+
+		join := tovars(joinmap)
+		log.Printf("Advancing project %s(%d) at ref %s with token %s\n", targetRoot, root.ID, ref, token)
+		http.Post(client.BaseURL().String() + "/projects/" + strconv.FormatUint(uint64(root.ID), 10) + "/ref/" + url.PathEscape(ref) + "/trigger/pipeline?token=" + token + "&" + join, "", nil)
 		writer.WriteHeader(http.StatusOK)
 	}
 }
