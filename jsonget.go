@@ -97,7 +97,7 @@ func advanceFunc(client *gitlab.Client, advance string) func (writer http.Respon
 			ps, resp, err := client.Projects.ListProjects(&gitlab.ListProjectsOptions{ListOptions: gitlab.ListOptions{Page: page, PerPage: 100}, Search: &rootStr})
 			roots = append(roots, ps...)
 			if err != nil {
-				log.Println(err)
+				log.Println(ps, resp, err)
 				writer.WriteHeader(http.StatusInternalServerError)
 				return
 			}
