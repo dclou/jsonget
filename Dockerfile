@@ -1,6 +1,6 @@
 FROM alpine:3.6
 RUN apk --no-cache add git go libc-dev && \
-  go get github.com/eientei/jsonget && \
+  go get github.com/dclou/jsonget && \
   go build -o /jsonget github.com/dclou/jsonget && \
   rm -rf go && \
   apk --no-cache del git go libc-dev
