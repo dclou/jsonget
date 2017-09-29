@@ -78,7 +78,20 @@ func advanceFunc(client *gitlab.Client, advance string, debug bool) func (writer
 			fmt.Println(flat)
 		}
 
-		ref := flat["object_attributes.ref"]
+		rawref := flat["object_attributes.ref"]
+
+		ref := ""
+		for _, v := range advanceRefs {
+			if rawref == "refs/heads/" + v {
+				ref = v
+				break
+			}
+		}
+
+		if ref == "" {
+			writer.WriteHeader(http.StatusOK)
+			return
+		}
 
 		source := flat["project.path_with_namespace"]
 
