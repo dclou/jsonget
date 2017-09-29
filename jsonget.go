@@ -82,7 +82,7 @@ func advanceFunc(client *gitlab.Client, advance string, debug bool) func (writer
 
 		ref := ""
 		for _, v := range advanceRefs {
-			if rawref == "refs/heads/" + v {
+			if rawref == v {
 				ref = v
 				break
 			}
