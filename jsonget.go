@@ -57,7 +57,7 @@ func tovars(joinmap map[string]string) string {
 	return strings.Join(list, "&")
 }
 
-func advanceFunc(client *gitlab.Client, advance string) func (writer http.ResponseWriter, request *http.Request) {
+func advanceFunc(client *gitlab.Client, advance string, debug bool) func (writer http.ResponseWriter, request *http.Request) {
 	advanceRefs := strings.Split(advance, ",")
 
 	return func (writer http.ResponseWriter, request *http.Request) {
@@ -68,6 +68,11 @@ func advanceFunc(client *gitlab.Client, advance string) func (writer http.Respon
 		dec.Decode(&body)
 
 		flat := flatten(body)
+
+		if debug {
+			fmt.PrintLn(flat)
+		}
+
 		rawref := flat["ref"]
 
 		ref := ""
@@ -136,6 +141,7 @@ func main() {
 	gitlabPtr := flag.String("gitlab", "", "GitLab http url")
 	tokenPtr := flag.String("token", "", "Gitlab user private token")
 	advancePtr := flag.String("advance-refs", "master,testing", "Advancing refs")
+	debugPtr := flag.Bool("debug", false, "Debug output")
 	flag.Parse()
 
 	parseErr := false
@@ -159,6 +165,6 @@ func main() {
 	git := gitlab.NewClient(nil, *tokenPtr)
 	git.SetBaseURL(*gitlabPtr)
 
-	http.HandleFunc("/advance", advanceFunc(git, *advancePtr))
+	http.HandleFunc("/advance", advanceFunc(git, *advancePtr, *debugPtr))
 	http.ListenAndServe(*listenPtr, nil)
 }
