@@ -69,11 +69,16 @@ func advanceFunc(client *gitlab.Client, advance string, debug bool) func (writer
 
 		flat := flatten(body)
 
+		if flat["object_kind"] != "pipeline" || flat["object_attributes.status"] != "success" {
+			writer.WriteHeader(http.StatusOK)
+			return
+		}
+
 		if debug {
 			fmt.Println(flat)
 		}
 
-		rawref := flat["ref"]
+		rawref := flat["object_attributes.ref"]
 
 		ref := ""
 		for _, v := range advanceRefs {
@@ -127,7 +132,7 @@ func advanceFunc(client *gitlab.Client, advance string, debug bool) func (writer
 
 		joinmap := make(map[string]string)
 		joinmap["SUBMODULE"] = sourceProj
-		joinmap["SUBMODULE_URL"] = flat["repository.git_http_url"]
+		joinmap["SUBMODULE_URL"] = flat["project.git_ssh_url"]
 
 		join := tovars(joinmap)
 		log.Printf("Advancing project %s(%d) at ref %s with token %s\n", targetRoot, root.ID, ref, token)
