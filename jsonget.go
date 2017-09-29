@@ -70,7 +70,7 @@ func advanceFunc(client *gitlab.Client, advance string, debug bool) func (writer
 		flat := flatten(body)
 
 		if debug {
-			fmt.PrintLn(flat)
+			fmt.Println(flat)
 		}
 
 		rawref := flat["ref"]
