@@ -132,7 +132,7 @@ func advanceFunc(client *gitlab.Client, advance string, debug bool) func (writer
 
 		joinmap := make(map[string]string)
 		joinmap["SUBMODULE"] = sourceProj
-		joinmap["SUBMODULE_URL"] = flat["project.git_ssh_url"]
+		joinmap["SUBMODULE_URL"] = flat["project.git_http_url"]
 
 		join := tovars(joinmap)
 		log.Printf("Advancing project %s(%d) at ref %s with token %s\n", targetRoot, root.ID, ref, token)
